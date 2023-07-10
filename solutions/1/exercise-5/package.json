@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "hypercore": "^10.17.0"
+    "corestore": "^6.8.4",
+    "hypercore": "^10.17.0",
+    "hyperswarm": "^4.5.1"
   }
 }
