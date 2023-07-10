@@ -1,0 +1,8 @@
+{
+  "name": "snapshot-5",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "hypercore": "^10.17.0"
+  }
+}
