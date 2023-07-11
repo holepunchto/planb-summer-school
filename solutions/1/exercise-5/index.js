@@ -7,12 +7,12 @@ const storePath = process.argv[2] || './store'
 const coreKey = process.argv[3]
 const store = new Corestore(storePath)
 
-const core = store.get({ name: 'local-chat' })
+const core = store.get({ name: 'local-chat', valueEncoding: 'json' })
 
 const keys = process.argv.slice(3)
 
 for (const key of keys) {
-  const otherCore = store.get({ key: Buffer.from(key, 'hex') })
+  const otherCore = store.get({ key: Buffer.from(key, 'hex'), valueEncoding: 'json' })
 
   await otherCore.ready()
 
@@ -25,7 +25,7 @@ for (const key of keys) {
   const start = Math.max(0, otherCore.length - 10)
   otherCore.createReadStream({ start, live: true })
     .on('data', function (data) {
-      console.log('-->', data.toString())
+      console.log('-->', data)
     })
 }
 
@@ -46,7 +46,10 @@ console.log(core.length, '<-- core.length')
 console.log(core.key.toString('hex'), '<-- my public key')
 
 process.stdin.on('data', function (msg) {
-  core.append(msg.toString().trim())
+  core.append({
+    timestamp: Date.now(),
+    message: msg.toString().trim()
+  })
 })
 
 // const lastBlock = await core.get(core.length - 1)
