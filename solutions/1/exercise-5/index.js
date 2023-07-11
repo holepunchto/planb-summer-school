@@ -6,33 +6,44 @@ import Hyperswarm from 'hyperswarm'
 const storePath = process.argv[2] || './store'
 const coreKey = process.argv[3]
 const store = new Corestore(storePath)
-const swarm = new Hyperswarm()
 
-const core = coreKey
-  ? store.get({ key: Buffer.from(coreKey, 'hex') })
-  : store.get({ name: 'local-chat' })
+const core = store.get({ name: 'local-chat' })
+
+const keys = process.argv.slice(3)
+
+for (const key of keys) {
+  const otherCore = store.get({ key: Buffer.from(key, 'hex') })
+
+  await otherCore.ready()
+
+  console.log('listening for', otherCore.key.toString('hex'))
+
+  otherCore.on('append', function () {
+    console.log('new messages appended...', otherCore.length)
+  })
+
+  const start = Math.max(0, otherCore.length - 10)
+  otherCore.createReadStream({ start, live: true })
+    .on('data', function (data) {
+      console.log('-->', data.toString())
+    })
+}
 
 await core.ready()
 
-const topic = Buffer.alloc(32).fill('plan-b-mathias')
+const swarm = new Hyperswarm({
+  keyPair: await store.createKeyPair('local-chat')
+})
+
+const topic = Buffer.alloc(32).fill('random_string')
 swarm.join(topic)
 swarm.on('connection', function (connection) {
   console.log('new connection from', connection.remotePublicKey.toString('hex'))
   store.replicate(connection)
 })
 
-core.on('append', function () {
-  console.log('new messages appended...', core.length)
-})
-
 console.log(core.length, '<-- core.length')
-console.log(core.key.toString('hex'), '<-- the public key')
-
-const start = Math.max(0, core.length - 10)
-core.createReadStream({ start, live: true })
-  .on('data', function (data) {
-    console.log('-->', data.toString())
-  })
+console.log(core.key.toString('hex'), '<-- my public key')
 
 process.stdin.on('data', function (msg) {
   core.append(msg.toString().trim())
